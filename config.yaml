@@ -1,0 +1,9 @@
+username: ":)"
+client_id: ":)"
+client_secret: ":)"
+channel: ":)"
+webhook:
+  host: 'mysupersecretdomain.com'
+  port: 42071
+  ssl_cert: 'server.pem'
+  ssl_port: 42072
