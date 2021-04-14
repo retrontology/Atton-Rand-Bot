@@ -3,6 +3,8 @@
 from webhook_ssl import proxy_request_handler
 from twitchAPI.twitch import Twitch
 from twitchAPI.webhook import TwitchWebHook
+from twitchAPI.oauth import UserAuthenticator
+from twitchAPI.types import AuthScope
 from functools import partial
 import re
 import sys
@@ -15,6 +17,8 @@ import logging
 import threading
 import http
 import ssl
+import pickle
+import os
 
 
 class AttonRand(irc.bot.SingleServerIRCBot):
@@ -28,7 +32,7 @@ class AttonRand(irc.bot.SingleServerIRCBot):
         self.client_secret = config['client_secret']
         self.channel = config['channel']
         self.twitch_setup()
-        self.token =
+        self.get_oauth_token()
         self.user_id = self.get_user_id(self.channel)
         self.get_live()
         self.setup_ssl_reverse_proxy()
@@ -80,20 +84,25 @@ class AttonRand(irc.bot.SingleServerIRCBot):
     def twitch_setup(self):
         self.logger.info(f'Setting up Twitch API client...')
         self.twitch = Twitch(self.client_id, self.client_secret)
+        self.twitch.user_auth_refresh_callback = self.oauth_user_refresh
         self.twitch.authenticate_app([])
         self.logger.info(f'Twitch API client set up!')
 
     def setup_ssl_reverse_proxy(self):
         self.logger.info(f'Setting up SSL reverse proxy for webhook...')
         handler = partial(proxy_request_handler, self.config['webhook']['port'])
-        self.httpd = http.server.HTTPServer((self.config['webhook']['host'], self.config['webhook']['ssl_port']), handler)
+        if 'local' in self.config['webhook'] and self.config['webhook']['local'] != '':
+            ip = self.config['webhook']['local']
+        else:
+            ip = self.config['webhook']['host']
+        self.httpd = http.server.HTTPServer((ip, self.config['webhook']['ssl_port']), handler)
         self.httpd.socket = ssl.wrap_socket(self.httpd.socket, certfile=self.config['webhook']['ssl_cert'], server_side=True)
         threading.Thread(target=self.httpd.serve_forever, daemon=True).start()
         self.logger.info(f'SSL reverse proxy set up!')
     
     def webhook_setup(self):
         self.logger.info(f'Setting up Twitch webhook...')
-        self.webhook = TwitchWebHook('https://' + self.config['host'] + ":" + str(self.config['webhook']['ssl_port']), self.client_id, self.config['webhook']['port'])
+        self.webhook = TwitchWebHook('https://' + self.config['webhook']['host'] + ":" + str(self.config['webhook']['ssl_port']), self.client_id, self.config['webhook']['port'])
         self.webhook.authenticate(self.twitch) 
         self.webhook.start()
         self.logger.info(f'Twitch webhook set up!')
@@ -127,6 +136,42 @@ class AttonRand(irc.bot.SingleServerIRCBot):
         else:
             self.live = False
             self.logger.info(f'{self.channel} has gone offline')
+
+    def get_oauth_token(self):
+        tokens = self.load_oauth_token()
+        target_scope = [AuthScope.CHAT_EDIT, AuthScope.CHAT_READ]
+        if tokens == None:
+            auth = UserAuthenticator(self.twitch, target_scope, force_verify=False)
+            self.token, self.refresh_token = auth.authenticate()
+            self.save_oauth_token()
+        else:
+            self.token = tokens[0]
+            self.refresh_token = tokens[1]
+        self.twitch.set_user_authentication(self.token, target_scope, self.refresh_token)
+
+    def save_oauth_token(self):
+        pickle_file = self.get_oauth_file()
+        with open(pickle_file, 'wb') as f:
+            pickle.dump((self.token, self.refresh_token), f)
+
+    def load_oauth_token(self):
+        pickle_file = self.get_oauth_file()
+        if os.path.exists(pickle_file):
+            with open(pickle_file, 'rb') as f:
+                out = pickle.load(f)
+            return out
+        else: return None
+
+    def get_oauth_file(self):
+        pickle_dir = os.path.join(os.path.dirname(__file__), 'oauth')
+        if not os.path.exists(pickle_dir): os.mkdir(pickle_dir)
+        pickle = os.path.join(pickle_dir, f'{self.username}_oauth.pickle')
+        return pickle
+    
+    def oauth_user_refresh(self, token, refresh_token):
+        self.token = token
+        self.refresh_token = refresh_token
+        self.save_oauth_token()
     
     def spam(self):
         time.sleep(random.randrange(60, 180))
@@ -134,8 +179,9 @@ class AttonRand(irc.bot.SingleServerIRCBot):
         self.connection.privmsg('#' + self.channel, self.message)
     
     def __del__(self):
-        self.logger.info(f'Shutting down')
+        self.logger.info(f'Shutting down...')
         self.webhook_unsubscribe()
         self.webhook.stop()
         self.httpd.shutdown()
         self.httpd.socket.close()
+        self.logger.info(f'Shut down')

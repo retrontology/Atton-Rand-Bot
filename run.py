@@ -3,13 +3,18 @@ from atton import AttonRand
 import threading
 import os
 import logging
+import logging.handlers
 
 
 def main():
-    config = atton_config('config.yaml')
+    config = atton_config('config.yaml.bak')
     logger = setup_logger('AttonRand')
     bot = AttonRand(config)
-    bot.start()
+    try:
+        bot.start()
+    except:
+        bot.connection.close()
+
 
 def setup_logger(logname, logpath=""):
     if not logpath or logpath == "":

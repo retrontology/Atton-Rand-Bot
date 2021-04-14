@@ -4,6 +4,7 @@ client_secret: ":)"
 channel: ":)"
 webhook:
   host: 'mysupersecretdomain.com'
+  local: ''
   port: 42071
   ssl_cert: 'server.pem'
   ssl_port: 42072
