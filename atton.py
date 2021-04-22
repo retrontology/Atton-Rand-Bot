@@ -27,6 +27,7 @@ class AttonRand(irc.bot.SingleServerIRCBot):
         self.logger = logging.getLogger('AttonRand.Bot')
         self.config = config
         self.retry = 3
+        self.init_cooldowns()
         self.username = config['username']
         self.client_id = config['client_id']
         self.client_secret = config['client_secret']
@@ -38,11 +39,17 @@ class AttonRand(irc.bot.SingleServerIRCBot):
         self.setup_ssl_reverse_proxy()
         self.webhook_setup()
         self.webhook_subscribe()
-        self.message = "@" + self.channel + " How about a game of pazaak, Republic Senate rules? :)"
+        self.message = "@" + self.channel + " How about a game of !pazaak, Republic Senate rules? :)"
         self.irc_server = 'irc.chat.twitch.tv'
         self.irc_port = 6667
         self.logger.info(f'Connecting to {self.irc_server} on port {self.irc_port}...')
         irc.bot.SingleServerIRCBot.__init__(self, [(self.irc_server, self.irc_port, 'oauth:'+self.token)], self.username, self.username)
+
+    def init_cooldowns(self):
+        self.cooldown = {}
+        self.last_used = {}
+        self.cooldown['pazaak'] = 10*60
+        self.last_used['pazaak'] = datetime.datetime.fromtimestamp(0)
 
     def on_pubmsg(self, c, e):
         for tag in e.tags:
@@ -54,6 +61,14 @@ class AttonRand(irc.bot.SingleServerIRCBot):
                 time = tag['value']
         if e.arguments[0][:1] == '!':
             cmd = e.arguments[0].split(' ')[0][1:]
+            if cmd.lower() == 'pazaak':
+                if name.lower() == self.channel:
+                    self.connection.privmsg('#' + self.channel, f'@{name} !pazaak these nuts in your mouth biiiiiitch :)')
+                    self.logger.info('GOTTEEM!!!')
+                elif (datetime.datetime.now() - self.last_used['pazaak']).total_seconds() > self.cooldown['pazaak']:
+                    self.last_used['pazaak'] = datetime.datetime.now()
+                    self.connection.privmsg('#' + self.channel, f'Sorry @{name}, only the channel owner can play !pazaak')
+                    self.logger.info(f'baiting {name}...')
         if e.arguments[0].lower().find(self.username.lower()) != -1:
             self.logger.info(f'{name}: {e.arguments[0]}')
 
