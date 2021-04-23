@@ -189,6 +189,7 @@ class AttonRand(irc.bot.SingleServerIRCBot):
         self.logger.info(f'Refreshing OAuth Token')
         self.token = token
         self.refresh_token = refresh_token
+        irc.bot.SingleServerIRCBot.__init__(self, [(self.irc_server, self.irc_port, 'oauth:'+self.token)], self.username, self.username)
         self.save_oauth_token()
     
     def spam(self):
