@@ -90,8 +90,10 @@ class AttonRand(irc.bot.SingleServerIRCBot):
         data = self.twitch.get_streams(user_id=self.user_id)
         if not data['data']:
             self.live = False
+            self.logger.info(f'{self.channel} is not live')
         elif data['data'][0]['type'] == 'live':
             self.live = True
+            self.logger.info(f'{self.channel} is live!')
         else:
             self.live = False
         return self.live
