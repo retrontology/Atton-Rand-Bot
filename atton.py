@@ -168,12 +168,14 @@ class AttonRand(irc.bot.SingleServerIRCBot):
         pickle_file = self.get_oauth_file()
         with open(pickle_file, 'wb') as f:
             pickle.dump((self.token, self.refresh_token), f)
+        self.logger.info(f'OAuth Token has been saved')
 
     def load_oauth_token(self):
         pickle_file = self.get_oauth_file()
         if os.path.exists(pickle_file):
             with open(pickle_file, 'rb') as f:
                 out = pickle.load(f)
+            self.logger.info(f'OAuth Token has been loaded')
             return out
         else: return None
 
@@ -184,6 +186,7 @@ class AttonRand(irc.bot.SingleServerIRCBot):
         return pickle
     
     def oauth_user_refresh(self, token, refresh_token):
+        self.logger.info(f'Refreshing OAuth Token')
         self.token = token
         self.refresh_token = refresh_token
         self.save_oauth_token()

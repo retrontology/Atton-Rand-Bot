@@ -7,7 +7,7 @@ import logging.handlers
 
 
 def main():
-    config = atton_config('config.yaml')
+    config = atton_config('config.yaml.')
     logger = setup_logger('AttonRand')
     bot = AttonRand(config)
     try:
