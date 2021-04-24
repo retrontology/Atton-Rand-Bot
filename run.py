@@ -13,7 +13,7 @@ def main():
     try:
         bot.start()
     except:
-        bot.connection.close()
+        bot.die()
 
 
 def setup_logger(logname, logpath=""):
