@@ -7,13 +7,20 @@ import logging.handlers
 
 
 def main():
-    config = atton_config('config.yaml')
+    config = atton_config('config.yaml.bak')
     logger = setup_logger('AttonRand')
     bot = AttonRand(config)
     try:
         bot.start()
-    except:
-        bot.die()
+    except Exception as e:
+        logger.info(e)
+        bot._active = False
+        bot.logger.info(f'Shutting down...')
+        bot.webhook_unsubscribe()
+        bot.webhook.stop()
+        bot.httpd.shutdown()
+        bot.httpd.socket.close()
+        bot.logger.info(f'Shut down')
 
 
 def setup_logger(logname, logpath=""):

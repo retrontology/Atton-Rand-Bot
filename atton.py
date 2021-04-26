@@ -73,17 +73,17 @@ class AttonRand(irc.bot.SingleServerIRCBot):
             self.logger.info(f'{name}: {e.arguments[0]}')
 
     def on_welcome(self, c, e):
-        self.logger.info(f'Joining #{self.channel}...')
+        self.logger.info(f'Joining #{self.channel.lower()}...')
         c.cap('REQ', ':twitch.tv/membership')
         c.cap('REQ', ':twitch.tv/tags')
         c.cap('REQ', ':twitch.tv/commands')
-        c.join('#' + self.channel)
+        c.join('#' + self.channel.lower())
     
     def on_join(self, c, e):
-        self.logger.info(f'Joined #{self.channel}!')
-    
+        self.logger.info(f'Joined #{self.channel.lower()}!')
+
     def get_user_id(self, channel):
-        user_info = self.twitch.get_users(logins=[channel])
+        user_info = self.twitch.get_users(logins=[channel.lower()])
         return user_info['data'][0]['id']
 
     def get_live(self):
@@ -147,7 +147,7 @@ class AttonRand(irc.bot.SingleServerIRCBot):
             if not self.live:
                 self.live = True
                 self.logger.info(f'{self.channel} has gone live!')
-                threading.Thread(target=self.spam, daemon=True).start()
+                self.spam()
             else:
                 self.live = True
         else:
@@ -192,17 +192,10 @@ class AttonRand(irc.bot.SingleServerIRCBot):
         self.token = token
         self.refresh_token = refresh_token
         irc.bot.SingleServerIRCBot.__init__(self, [(self.irc_server, self.irc_port, 'oauth:'+self.token)], self.username, self.username)
+        self._connect()
         self.save_oauth_token()
     
     def spam(self):
         time.sleep(random.randrange(60, 180))
         self.logger.info(self.message)
         self.connection.privmsg('#' + self.channel, self.message)
-    
-    def __del__(self):
-        self.logger.info(f'Shutting down...')
-        self.webhook_unsubscribe()
-        self.webhook.stop()
-        self.httpd.shutdown()
-        self.httpd.socket.close()
-        self.logger.info(f'Shut down')
