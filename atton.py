@@ -80,7 +80,7 @@ class AttonRand(irc.bot.SingleServerIRCBot):
         c.join('#' + self.channel.lower())
     
     def on_join(self, c, e):
-        self.logger.info(f'Joined #{self.channel.lower()}!')
+        self.logger.info(f'Joined #{e.target}!')
 
     def get_user_id(self, channel):
         user_info = self.twitch.get_users(logins=[channel.lower()])
