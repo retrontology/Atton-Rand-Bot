@@ -188,7 +188,7 @@ class AttonRand(irc.bot.SingleServerIRCBot):
         return pickle
     
     def oauth_user_refresh(self, token, refresh_token):
-        self.logger.info(f'Refreshing OAuth Token')
+        self.logger.debug(f'Refreshing OAuth Token')
         self.token = token
         self.refresh_token = refresh_token
         irc.bot.SingleServerIRCBot.__init__(self, [(self.irc_server, self.irc_port, 'oauth:'+self.token)], self.username, self.username)
