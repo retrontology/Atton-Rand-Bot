@@ -1,11 +1,13 @@
 #!/usr/bin/env python
 
 from webhook_ssl import proxy_request_handler
+from userAuth import authenticate
 from twitchAPI.twitch import Twitch
 from twitchAPI.webhook import TwitchWebHook
 from twitchAPI.oauth import UserAuthenticator
 from twitchAPI.types import AuthScope
 from functools import partial
+import webbrowser
 import re
 import sys
 import random
@@ -154,17 +156,29 @@ class AttonRand(irc.bot.SingleServerIRCBot):
             self.live = False
             self.logger.info(f'{self.channel} has gone offline')
 
+    def authenticate_twitch(self, target_scope):
+        cli = webbrowser.get().name == 'www-browser'
+        if cli:
+            self.token, self.refresh_token = authenticate(self.twitch, target_scope)
+        else:
+            auth = UserAuthenticator(self.twitch, target_scope, force_verify=False)
+            self.token, self.refresh_token = auth.authenticate()
+        self.save_oauth_token()
+
     def get_oauth_token(self):
         tokens = self.load_oauth_token()
         target_scope = [AuthScope.CHAT_EDIT, AuthScope.CHAT_READ]
         if tokens == None:
-            auth = UserAuthenticator(self.twitch, target_scope, force_verify=False)
-            self.token, self.refresh_token = auth.authenticate()
-            self.save_oauth_token()
+            self.authenticate_twitch(target_scope)
         else:
             self.token = tokens[0]
             self.refresh_token = tokens[1]
-        self.twitch.set_user_authentication(self.token, target_scope, self.refresh_token)
+        try:
+            self.twitch.set_user_authentication(self.token, target_scope, self.refresh_token)
+        except Exception as e:
+            self.logger.error(e)
+            self.authenticate_twitch(target_scope)
+            self.twitch.set_user_authentication(self.token, target_scope, self.refresh_token)
 
     def save_oauth_token(self):
         pickle_file = self.get_oauth_file()
