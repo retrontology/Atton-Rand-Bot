@@ -1,23 +1,16 @@
 #!/usr/bin/env python
 
-from webhook_ssl import proxy_request_handler
 from userAuth import authenticate
 from twitchAPI.twitch import Twitch
 from twitchAPI.webhook import TwitchWebHook
 from twitchAPI.oauth import UserAuthenticator
 from twitchAPI.types import AuthScope
-from functools import partial
 import webbrowser
-import re
-import sys
 import random
 import irc.bot
-import requests
 import datetime
 import time
 import logging
-import threading
-import http
 import ssl
 import pickle
 import os
@@ -39,7 +32,7 @@ class AttonRand(irc.bot.SingleServerIRCBot):
         self.user_id = self.get_user_id(self.channel)
         self.get_live()
         self.setup_ssl_reverse_proxy()
-        self.webhook_setup()
+        self.webhook_setup(config['webhook']['host'], config['webhook']['port'], self.client_id, config['webhook']['ssl_cert'], config['webhook']['ssl_key'], self.twitch)
         self.webhook_subscribe()
         self.message = "@" + self.channel + " How about a game of !pazaak, Republic Senate rules? :)"
         self.irc_server = 'irc.chat.twitch.tv'
@@ -106,25 +99,14 @@ class AttonRand(irc.bot.SingleServerIRCBot):
         self.twitch.user_auth_refresh_callback = self.oauth_user_refresh
         self.twitch.authenticate_app([])
         self.logger.info(f'Twitch API client set up!')
-
-    def setup_ssl_reverse_proxy(self):
-        self.logger.info(f'Setting up SSL reverse proxy for webhook...')
-        handler = partial(proxy_request_handler, self.config['webhook']['port'])
-        if 'local' in self.config['webhook'] and self.config['webhook']['local'] != '':
-            ip = self.config['webhook']['local']
-        else:
-            ip = self.config['webhook']['host']
-        self.httpd = http.server.HTTPServer((ip, self.config['webhook']['ssl_port']), handler)
-        self.httpd.socket = ssl.wrap_socket(self.httpd.socket, certfile=self.config['webhook']['ssl_cert'], server_side=True)
-        threading.Thread(target=self.httpd.serve_forever, daemon=True).start()
-        self.logger.info(f'SSL reverse proxy set up!')
     
-    def webhook_setup(self):
-        self.logger.info(f'Setting up Twitch webhook...')
-        self.webhook = TwitchWebHook('https://' + self.config['webhook']['host'] + ":" + str(self.config['webhook']['ssl_port']), self.client_id, self.config['webhook']['port'])
-        self.webhook.authenticate(self.twitch) 
-        self.webhook.start()
-        self.logger.info(f'Twitch webhook set up!')
+    def webhook_setup(host, port, client_id, cert, key, twitch):
+        ssl_context = ssl.create_default_context(purpose=ssl.Purpose.CLIENT_AUTH)
+        ssl_context.load_cert_chain(certfile=cert, keyfile=key)
+        hook = TwitchWebHook('https://' + host + ":" + str(port), client_id, port, ssl_context=ssl_context)
+        hook.authenticate(twitch)
+        hook.start()
+        return hook
     
     def webhook_unsubscribe(self):
         if self.webhook_uuid:
