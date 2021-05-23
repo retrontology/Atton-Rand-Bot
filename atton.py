@@ -100,7 +100,7 @@ class AttonRand(irc.bot.SingleServerIRCBot):
         self.twitch.authenticate_app([])
         self.logger.info(f'Twitch API client set up!')
     
-    def webhook_setup(host, port, client_id, cert, key, twitch):
+    def webhook_setup(self, host, port, client_id, cert, key, twitch):
         ssl_context = ssl.create_default_context(purpose=ssl.Purpose.CLIENT_AUTH)
         ssl_context.load_cert_chain(certfile=cert, keyfile=key)
         hook = TwitchWebHook('https://' + host + ":" + str(port), client_id, port, ssl_context=ssl_context)
