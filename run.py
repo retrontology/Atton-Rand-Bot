@@ -11,7 +11,7 @@ def main():
     bot = AttonRand(config)
     try:
         bot.start()
-    except Exception as e:
+    except KeyboardInterrupt as e:
         logger.info(e)
         bot._active = False
         bot.logger.info(f'Shutting down...')
