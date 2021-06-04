@@ -16,7 +16,7 @@ def main():
         bot._active = False
         bot.logger.info(f'Shutting down...')
         for channel in bot.channel_handlers:
-            channel.webhook_stream_changed_unsubscribe()
+            bot.channel_handlers[channel].webhook_stream_changed_unsubscribe()
         bot.webhook.stop()
         bot.logger.info(f'Shut down')
 
