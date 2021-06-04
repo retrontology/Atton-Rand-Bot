@@ -17,7 +17,7 @@ class AttonRand(retroBot.retroBot):
 class AttonHandler(retroBot.channelHandler):
 
     def __init__(self, channel, parent):
-        super(AttonHandler, self).__init__(channel, parent)
+        super().__init__(channel, parent)
         self.user_id = self.get_user_id()
         self.message = "@" + channel + " How about a game of !pazaak, Republic Senate rules? :)"
         self.init_cooldowns()
@@ -42,7 +42,7 @@ class AttonHandler(retroBot.channelHandler):
                     self.logger.info(f'baiting {msg.username}...')
                     self.last_used['pazaak'] = datetime.datetime.now()
                     self.send_message(f'Sorry @{msg.username}, only the channel owner can play !pazaak')
-        if msg.content.lower().find(self.username.lower()) != -1:
+        if msg.content.lower().find(self.parent.username.lower()) != -1:
             self.logger.info(f'{msg.username}: {msg.content}')
     
     def callback_stream_gone_live(self, uuid, data):
