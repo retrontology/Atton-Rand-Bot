@@ -36,7 +36,7 @@ def setup_logger(logname, logpath=""):
     file_handler.setFormatter(form)
     stream_handler.setFormatter(form)
     file_handler.setLevel(logging.INFO)
-    stream_handler.setLevel(logging.DEBUG)
+    stream_handler.setLevel(logging.INFO)
     logger.addHandler(file_handler)
     logger.addHandler(stream_handler)
     return logger
