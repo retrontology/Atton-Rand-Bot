@@ -12,8 +12,6 @@ class AttonRand(retroBot.retroBot):
     
     def __init__(self, config):
         self.config = config
-        self.retry = 3
-        self.init_cooldowns()
         self.username = config['username']
         self.client_id = config['client_id']
         self.client_secret = config['client_secret']
@@ -27,6 +25,7 @@ class AttonHandler(retroBot.channelHandler):
         super(AttonHandler, self).__init__(channel, parent)
         self.user_id = self.get_user_id(channel)
         self.message = "@" + channel + " How about a game of !pazaak, Republic Senate rules? :)"
+        self.init_cooldowns()
         self.get_live()
         self.webhook_stream_changed_subscribe()
 
