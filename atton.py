@@ -12,12 +12,7 @@ class AttonRand(retroBot.retroBot):
     
     def __init__(self, config):
         self.config = config
-        self.username = config['username']
-        self.client_id = config['client_id']
-        self.client_secret = config['client_secret']
-        self.channel = config['channel']
-        self.logger.info(f'Connecting to {self.irc_server} on port {self.irc_port}...')
-        super(retroBot.retroBot, self).__init__()
+        super(AttonRand, self).__init__(config['username'], config['client_id'], config['client_secret'], [config['channel']], handler=AttonHandler, webhook_host=config['webhook']['host'], webhook_port=config['webhook']['port'], ssl_cert=config['webhook']['ssl_cert'], ssl_key=config['webhook']['ssl_key'])
 
 class AttonHandler(retroBot.channelHandler):
 
