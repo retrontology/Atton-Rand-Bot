@@ -1,13 +1,12 @@
-from atton_config import atton_config
 from atton import AttonRand
-import threading
+from retroBot.config import config as attonConfig
 import os
 import logging
 import logging.handlers
 
 
 def main():
-    config = atton_config('config.yaml')
+    config = attonConfig('config.yaml')
     logger = setup_logger('AttonRand')
     bot = AttonRand(config)
     try:
@@ -16,10 +15,9 @@ def main():
         logger.info(e)
         bot._active = False
         bot.logger.info(f'Shutting down...')
-        bot.webhook_unsubscribe()
-        bot.webhook.stop()
-        bot.httpd.shutdown()
-        bot.httpd.socket.close()
+        bot.webhook()
+        for channel in bot.channel_handlers:
+            channel.webhook_stream_changed_unsubscribe()
         bot.logger.info(f'Shut down')
 
 
