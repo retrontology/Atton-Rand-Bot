@@ -1,25 +1,23 @@
-from atton_config import atton_config
 from atton import AttonRand
-import threading
+from retroBot.config import config as attonConfig
 import os
 import logging
 import logging.handlers
 
 
 def main():
-    config = atton_config('config.yaml')
-    logger = setup_logger('AttonRand')
+    config = attonConfig('config.yaml')
+    logger = setup_logger('retroBot')
     bot = AttonRand(config)
     try:
         bot.start()
-    except Exception as e:
+    except KeyboardInterrupt as e:
         logger.info(e)
         bot._active = False
         bot.logger.info(f'Shutting down...')
-        bot.webhook_unsubscribe()
+        for channel in bot.channel_handlers:
+            bot.channel_handlers[channel].webhook_stream_changed_unsubscribe()
         bot.webhook.stop()
-        bot.httpd.shutdown()
-        bot.httpd.socket.close()
         bot.logger.info(f'Shut down')
 
 
