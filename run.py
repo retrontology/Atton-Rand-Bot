@@ -7,7 +7,7 @@ import logging.handlers
 
 def main():
     config = attonConfig('config.yaml')
-    logger = setup_logger('AttonRand')
+    logger = setup_logger('retroBot')
     bot = AttonRand(config)
     try:
         bot.start()
