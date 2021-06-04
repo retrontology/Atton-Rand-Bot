@@ -18,7 +18,7 @@ class AttonHandler(retroBot.channelHandler):
 
     def __init__(self, channel, parent):
         super(AttonHandler, self).__init__(channel, parent)
-        self.user_id = self.get_user_id(channel)
+        self.user_id = self.get_user_id()
         self.message = "@" + channel + " How about a game of !pazaak, Republic Senate rules? :)"
         self.init_cooldowns()
         self.get_live()
